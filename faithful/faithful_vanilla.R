@@ -40,7 +40,8 @@ for (i in 1:3) {
   hist(waiting,
     breaks = bins[i],
     col = "#0088ff",
-    freq = FALSE
+    freq = FALSE,
+    xlab = "Waiting time / min",
   )
   lines(density(waiting),
     lwd = 2,
@@ -51,7 +52,8 @@ for (i in 1:3) {
 # density plot of waiting time with different bandwidths
 par(mfrow = c(1, 1))
 plot(density(waiting),
-  lwd = 2, col = "red"
+  lwd = 2, col = "red",
+  xlab = "Waiting time / min"
 )
 lines(density(waiting, bw = 2),
   lwd = 2, lty = 2, col = "green"
@@ -60,7 +62,7 @@ lines(density(waiting, bw = 0.75),
   lwd = 2, lty = 3, col = "blue"
 )
 legend("topright",
-  legend = c("bw = 1", "bw = 2", "bw = 0.75"),
+  legend = c("bw = default", "bw = 2", "bw = 0.75"),
   lty = 1:3,
   lwd = 2,
   col = c("red", "green", "blue")
@@ -111,20 +113,20 @@ abline(model, col = "red", lwd = 2)
 
 k <- 2
 c <- kmeans(cbind(lagduration[2:n], waiting[2:n]), k)
-plot(lagduration, waiting,
+plot(lagduration[2:n], waiting[2:n],
   pch = 19,
-  xlab = "Duration of previous eruption / mins",
-  ylab = "Waiting time / mins",
+  xlab = "Duration of previous eruption / min",
+  ylab = "Waiting time / min",
   col = as.factor(c$cluster)
 )
 
 # different number of clusters
 k <- 3
 c <- kmeans(cbind(lagduration[2:n], waiting[2:n]), k)
-plot(lagduration, waiting,
+plot(lagduration[2:n], waiting[2:n],
   pch = 19,
-  xlab = "Duration of previous eruption / mins",
-  ylab = "Waiting time / mins",
+  xlab = "Duration of previous eruption / min",
+  ylab = "Waiting time / min",
   col = as.factor(c$cluster)
 )
 
@@ -132,9 +134,9 @@ plot(lagduration, waiting,
 lagwaiting <- lagmatrix(waiting, 1)
 k <- 2
 c <- kmeans(cbind(lagwaiting[2:n], waiting[2:n]), k)
-plot(lagwaiting, waiting,
+plot(lagwaiting[2:n], waiting[2:n],
   pch = 19,
-  xlab = "Waiting time of previous eruption / mins",
-  ylab = "Waiting time / mins",
+  xlab = "Waiting time of previous eruption / min",
+  ylab = "Waiting time / min",
   col = as.factor(c$cluster)
 )
