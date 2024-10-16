@@ -15,6 +15,9 @@ duration <- faithful$duration
 # day recorded
 day <- faithful$day
 
+# save location
+saveto <- "plots/R_vanilla/"
+
 # 1 Importing data and summary statistics
 
 # summary statistics of waiting time
@@ -23,11 +26,13 @@ summary(waiting)
 summary(duration)
 
 # boxplot of waiting time against day
+png(paste(saveto, "boxplot.png", sep = ""))
 boxplot(waiting ~ day,
   xlab = "Day",
   ylab = "Waiting time between successive eruptions / min",
   col = "orange"
 )
+dev.off()
 
 # 2 Histograms and kernel density plots
 
@@ -35,6 +40,7 @@ boxplot(waiting ~ day,
 bins <- c(10, 25, 50)
 
 # histogram of waiting time with density plot
+png(paste(saveto, "histograms.png", sep = ""))
 par(mfrow = c(1, 3))
 for (i in 1:3) {
   hist(waiting,
@@ -48,8 +54,10 @@ for (i in 1:3) {
     col = "red"
   )
 }
+dev.off()
 
 # density plot of waiting time with different bandwidths
+png(paste(saveto, "densities.png", sep = ""))
 par(mfrow = c(1, 1))
 plot(density(waiting),
   lwd = 2, col = "red",
@@ -67,9 +75,12 @@ legend("topright",
   lwd = 2,
   col = c("red", "green", "blue")
 )
+dev.off()
 
 # 3 Plotting consecutive eruption waiting times
 
+png(paste(saveto, "scatter.png", sep = ""))
+plot.new()
 par(mfrow = c(3, 5))
 
 # x-axis limits: 0 to max number of eruptions in a day
@@ -89,6 +100,7 @@ for (i in 1:15) {
     col = "blue"
   )
 }
+dev.off()
 
 # 4 Scatterplots and linear regression
 
@@ -97,6 +109,7 @@ library(tsutils)
 lagduration <- lagmatrix(duration, 1)
 
 # scatterplot of waiting time against lagged duration
+png(paste(saveto, "scatterplot.png", sep = ""))
 par(mfrow = c(1, 1))
 plot(lagduration, waiting,
   pch = 19,
@@ -108,9 +121,11 @@ plot(lagduration, waiting,
 # linear regression of waiting time against lagged duration
 model <- lm(waiting ~ lagduration)
 abline(model, col = "red", lwd = 2)
+dev.off()
 
 # 5 K-means clustering
 
+png(paste(saveto, "kmeans_2.png", sep = ""))
 k <- 2
 c <- kmeans(cbind(lagduration[2:n], waiting[2:n]), k)
 plot(lagduration[2:n], waiting[2:n],
@@ -119,8 +134,10 @@ plot(lagduration[2:n], waiting[2:n],
   ylab = "Waiting time / min",
   col = as.factor(c$cluster)
 )
+dev.off()
 
 # different number of clusters
+png(paste(saveto, "kmeans_3.png", sep = ""))
 k <- 3
 c <- kmeans(cbind(lagduration[2:n], waiting[2:n]), k)
 plot(lagduration[2:n], waiting[2:n],
@@ -129,8 +146,10 @@ plot(lagduration[2:n], waiting[2:n],
   ylab = "Waiting time / min",
   col = as.factor(c$cluster)
 )
+dev.off()
 
 # lagged waiting time against waiting time
+png(paste(saveto, "kmeans_lag.png", sep = ""))
 lagwaiting <- lagmatrix(waiting, 1)
 k <- 2
 c <- kmeans(cbind(lagwaiting[2:n], waiting[2:n]), k)
@@ -140,3 +159,4 @@ plot(lagwaiting[2:n], waiting[2:n],
   ylab = "Waiting time / min",
   col = as.factor(c$cluster)
 )
+dev.off()

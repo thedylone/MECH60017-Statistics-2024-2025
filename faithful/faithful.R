@@ -15,6 +15,9 @@ duration <- faithful$duration
 # day recorded
 day <- faithful$day
 
+# save location
+saveto <- "plots/R/"
+
 # 1 Importing data and summary statistics
 
 # summary statistics of waiting time
@@ -30,6 +33,10 @@ boxplot <- ggplot(faithful) +
   labs(x = "Day", y = "Waiting time between successive eruptions / min") +
   theme_bw()
 print(boxplot)
+ggsave(
+  paste(saveto, "boxplot.png", sep = ""), boxplot,
+  width = 10, height = 5
+)
 
 # 2 Histograms and kernel density plots
 
@@ -61,6 +68,10 @@ histograms <- lapply(
 
 histogram <- ggarrange(plotlist = histograms, ncol = 3)
 print(histogram)
+ggsave(
+  paste(saveto, "histograms.png", sep = ""), histogram,
+  width = 10, height = 5
+)
 
 # density plot of waiting time with different bandwidths
 colours <- c("bw = default" = "red", "bw = 2" = "green", "bw = 0.75" = "blue")
@@ -86,6 +97,10 @@ densities <- ggplot(faithful) +
   theme_bw() +
   scale_color_manual(values = colours)
 print(densities)
+ggsave(
+  paste(saveto, "densities.png", sep = ""), densities,
+  width = 10, height = 5
+)
 
 # 3 Plotting consecutive eruption waiting times
 
@@ -113,6 +128,10 @@ scatters <- lapply(
 
 scatter <- ggarrange(plotlist = scatters, ncol = 5, nrow = 3)
 print(scatter)
+ggsave(
+  paste(saveto, "scatter.png", sep = ""), scatter,
+  width = 10, height = 5
+)
 
 # 4 Scatterplots and linear regression
 
@@ -131,6 +150,10 @@ scatterplot <- ggplot(faithful) +
   # linear regression of waiting time against lagged duration
   geom_smooth(method = "lm", se = FALSE)
 print(scatterplot)
+ggsave(
+  paste(saveto, "scatterplot.png", sep = ""), scatterplot,
+  width = 10, height = 5
+)
 
 # 5 K-means clustering
 
@@ -147,6 +170,10 @@ kmeans <- ggplot(lagdata) +
   ) +
   theme_bw()
 print(kmeans)
+ggsave(
+  paste(saveto, "kmeans_2.png", sep = ""), kmeans,
+  width = 10, height = 5
+)
 
 # different number of clusters
 k <- 3
@@ -161,6 +188,10 @@ kmeans <- ggplot(lagdata) +
   ) +
   theme_bw()
 print(kmeans)
+ggsave(
+  paste(saveto, "kmeans_3.png", sep = ""), kmeans,
+  width = 10, height = 5
+)
 
 # lagged waiting time against waiting time
 lagwaiting <- lagmatrix(waiting, 1)
@@ -177,3 +208,7 @@ kmeans <- ggplot(lagdata) +
   ) +
   theme_bw()
 print(kmeans)
+ggsave(
+  paste(saveto, "kmeans_lag.png", sep = ""), kmeans,
+  width = 10, height = 5
+)
