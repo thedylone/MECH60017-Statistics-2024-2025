@@ -14,7 +14,7 @@ knitr::opts_chunk$set(dev = "png",
                       fig.path = "plots/R_vanilla/")
 ```
 
-# import faithful.csv data
+# 1 Importing data and summary statistics
 
 ```{r import}
 library(readr)
@@ -32,12 +32,7 @@ waiting <- faithful$waiting
 duration <- faithful$duration
 # day recorded
 day <- faithful$day
-
-# save location
-saveto <- "plots/R_vanilla/"
 ```
-
-# 1 Importing data and summary statistics
 
 ```{r summary}
 # summary statistics of waiting time
