@@ -1,4 +1,22 @@
+---
+title: "Faithful visualisation with vanilla R"
+author: "Dylan Chua"
+date: "October 2024"
+output:
+  html_document:
+    self_contained: yes
+---
+
+```{r setup-chunk, include=FALSE}
+knitr::opts_chunk$set(dev = "png",
+                      dpi = 300,
+                      cache = TRUE,
+                      fig.path = "plots/R_vanilla/")
+```
+
 # import faithful.csv data
+
+```{r import}
 library(readr)
 faithful <- read_csv("faithful.csv",
   col_types = cols(
@@ -17,30 +35,33 @@ day <- faithful$day
 
 # save location
 saveto <- "plots/R_vanilla/"
+```
 
 # 1 Importing data and summary statistics
 
+```{r summary}
 # summary statistics of waiting time
 summary(waiting)
 # summary statistics of duration
 summary(duration)
+```
 
-# boxplot of waiting time against day
-png(paste(saveto, "boxplot.png", sep = ""))
+## boxplot of waiting time against day
+```{r boxplot}
 boxplot(waiting ~ day,
   xlab = "Day",
   ylab = "Waiting time between successive eruptions / min",
   col = "orange"
 )
-dev.off()
+```
 
 # 2 Histograms and kernel density plots
 
+## histogram of waiting time with density plot
+```{r histogram}
 # number of bins for histogram
 bins <- c(10, 25, 50)
 
-# histogram of waiting time with density plot
-png(paste(saveto, "histograms.png", sep = ""))
 par(mfrow = c(1, 3))
 for (i in 1:3) {
   hist(waiting,
@@ -54,10 +75,10 @@ for (i in 1:3) {
     col = "red"
   )
 }
-dev.off()
+```
 
-# density plot of waiting time with different bandwidths
-png(paste(saveto, "densities.png", sep = ""))
+## density plot of waiting time with different bandwidths
+```{r densities}
 par(mfrow = c(1, 1))
 plot(density(waiting),
   lwd = 2, col = "red",
@@ -75,14 +96,13 @@ legend("topright",
   lwd = 2,
   col = c("red", "green", "blue")
 )
-dev.off()
+```
 
 # 3 Plotting consecutive eruption waiting times
 
-png(paste(saveto, "scatter.png", sep = ""))
-plot.new()
-par(mfrow = c(3, 5))
+```{r scatter}
 
+par(mfrow = c(3, 5))
 # x-axis limits: 0 to max number of eruptions in a day
 xlim <- c(0, max(table(day)))
 # y-axis limits: min to max waiting time
@@ -92,7 +112,7 @@ for (i in 1:15) {
   select <- which(day == i)
   plot(waiting[select],
     type = "l",
-    title(main = paste("Day", i)),
+    main = paste("Day", i),
     xlab = "Eruption number",
     xlim = xlim,
     ylab = "Waiting time / min",
@@ -100,16 +120,16 @@ for (i in 1:15) {
     col = "blue"
   )
 }
-dev.off()
+```
 
 # 4 Scatterplots and linear regression
 
+## scatterplot of waiting time against lagged duration
+```{r scatterplot}
 n <- length(waiting)
 library(tsutils)
 lagduration <- lagmatrix(duration, 1)
 
-# scatterplot of waiting time against lagged duration
-png(paste(saveto, "scatterplot.png", sep = ""))
 par(mfrow = c(1, 1))
 plot(lagduration, waiting,
   pch = 19,
@@ -117,15 +137,13 @@ plot(lagduration, waiting,
   ylab = "Waiting time / min",
   col = "orange"
 )
-
-# linear regression of waiting time against lagged duration
 model <- lm(waiting ~ lagduration)
 abline(model, col = "red", lwd = 2)
-dev.off()
+```
 
 # 5 K-means clustering
 
-png(paste(saveto, "kmeans_2.png", sep = ""))
+```{r k-2}
 k <- 2
 c <- kmeans(cbind(lagduration[2:n], waiting[2:n]), k)
 plot(lagduration[2:n], waiting[2:n],
@@ -134,10 +152,10 @@ plot(lagduration[2:n], waiting[2:n],
   ylab = "Waiting time / min",
   col = as.factor(c$cluster)
 )
-dev.off()
+```
 
-# different number of clusters
-png(paste(saveto, "kmeans_3.png", sep = ""))
+## different number of clusters
+```{r k-3}
 k <- 3
 c <- kmeans(cbind(lagduration[2:n], waiting[2:n]), k)
 plot(lagduration[2:n], waiting[2:n],
@@ -146,10 +164,10 @@ plot(lagduration[2:n], waiting[2:n],
   ylab = "Waiting time / min",
   col = as.factor(c$cluster)
 )
-dev.off()
+```
 
-# lagged waiting time against waiting time
-png(paste(saveto, "kmeans_lag.png", sep = ""))
+## lagged waiting time against waiting time
+```{r k-lag}
 lagwaiting <- lagmatrix(waiting, 1)
 k <- 2
 c <- kmeans(cbind(lagwaiting[2:n], waiting[2:n]), k)
@@ -159,4 +177,4 @@ plot(lagwaiting[2:n], waiting[2:n],
   ylab = "Waiting time / min",
   col = as.factor(c$cluster)
 )
-dev.off()
+```
