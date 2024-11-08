@@ -131,7 +131,7 @@ plot_density(p_false_pos_simulations,
 )
 ```
 
-## 3. Now simulate the situation where the athlete is only deemed to have failed if he/she has failed two tests, where the tests are conditionally independent given the athlete's drug-taking status.
+### 3. Now simulate the situation where the athlete is only deemed to have failed if he/she has failed two tests, where the tests are conditionally independent given the athlete's drug-taking status.
 
 ```{r two-tests}
 # repeat simulation 1000 times
@@ -144,9 +144,9 @@ plot_density(simulations_two_tests,
 )
 ```
 
-## 4. Can you suggest ways to improve the simulation (e.g. write code efficiently)?
+### 4. Can you suggest ways to improve the simulation (e.g. write code efficiently)?
 
-## 5. Use Bayes' Theorem to calculate the conditional probability of drug taking given failing (a) one test (b) two tests that are conditionally independent given drug-taking status. (Use the probabilites as specified in the original scenario.) Does this agree with your simulation?
+### 5. Use Bayes' Theorem to calculate the conditional probability of drug taking given failing (a) one test (b) two tests that are conditionally independent given drug-taking status. (Use the probabilites as specified in the original scenario.) Does this agree with your simulation?
 
 ```{r bayes-theorem}
 # Bayes' Theorem
@@ -166,4 +166,172 @@ print(paste(
 
 Initially choose two distributions (one discrete and one continuous).
 
-## 
+Selected: Poisson and Gamma distributions.
+
+### 1. Plot the p.m.f. or p.d.f. and c.d.f. for a suitable choice of parameters for each distribution. You decide the range of values and parameter(s) for each distribution.
+
+```{r plot-distributions}
+points <- seq(0, 100, by = 1)
+par(mfrow = c(2, 2))
+
+# Poisson distribution
+lambda <- 25
+poisson_pmf <- dpois(points, lambda = lambda)
+plot(points, poisson_pmf,
+  type = "h",
+  lwd = 2,
+  col = "red",
+  xlab = "x",
+  ylab = "Probability",
+  main = paste("Poisson distribution (lambda =", lambda, ")")
+)
+
+poisson_cdf <- ppois(points, lambda = lambda)
+plot(points, poisson_cdf,
+  type = "s",
+  lwd = 2,
+  col = "red",
+  xlab = "x",
+  ylab = "Probability",
+  main = paste("Poisson distribution (lambda =", lambda, ")")
+)
+
+# Gamma distribution
+shape <- 25
+scale <- 1
+gamma_pdf <- dgamma(points, shape = shape, scale = scale)
+plot(points, gamma_pdf,
+  type = "l",
+  lwd = 2,
+  col = "blue",
+  xlab = "x",
+  ylab = "Probability",
+  main = paste("Gamma distribution (k =", shape, ", θ =", scale, ")")
+)
+
+gamma_cdf <- pgamma(points, shape = shape, scale = scale)
+plot(points, gamma_cdf,
+  type = "s",
+  lwd = 2,
+  col = "blue",
+  xlab = "x",
+  ylab = "Probability",
+  main = paste("Gamma distribution (k =", shape, ", θ =", scale, ")")
+)
+```
+
+### 2. Generate n = 100 random numbers from each distribution.
+
+```{r generate-distributions}
+n <- 100
+
+generate_distributions <- function(n, lambda, shape, scale) {
+  # Poisson distribution
+  poisson_rvs <- rpois(n, lambda = lambda)
+
+  # Gamma distribution
+  gamma_rvs <- rgamma(n, shape = shape, scale = scale)
+
+  return(list(poisson_rvs = poisson_rvs, gamma_rvs = gamma_rvs))
+}
+
+distributions <- generate_distributions(n, lambda, shape, scale)
+poisson_rvs <- distributions$poisson_rvs
+gamma_rvs <- distributions$gamma_rvs
+```
+
+(a) Plot histograms of the relative frequency distribution of your random sample using appropriate bin widths.
+
+(b) Overlay the true probability density function. Do they match?
+
+```{r plot-histograms}
+
+plot_distributions <- function(distributions, points, poisson_pmf, gamma_pdf) {
+  n <- length(distributions$poisson_rvs)
+  poisson_rvs <- distributions$poisson_rvs
+  gamma_rvs <- distributions$gamma_rvs
+
+  par(mfrow = c(2, 1))
+
+  hist(poisson_rvs,
+    freq = FALSE,
+    col = "red",
+    xlab = "x",
+    ylab = "Frequency",
+    main = paste("Poisson distribution (n =", n, ")")
+  )
+  # overlay true probability density function
+  lines(points, poisson_pmf,
+    lwd = 2,
+    col = "orange"
+  )
+
+  hist(gamma_rvs,
+    freq = FALSE,
+    col = "blue",
+    xlab = "x",
+    ylab = "Frequency",
+    main = paste("Gamma distribution (n =", n, ")")
+  )
+  # overlay true probability density function
+  lines(points, gamma_pdf,
+    lwd = 2,
+    col = "orange"
+  )
+}
+
+plot_distributions(distributions, points, poisson_pmf, gamma_pdf)
+```
+
+(c) Analytically calculate the theoretical mean and variance given your choice of parameters.
+
+```{r theoretical-moments}
+
+# Poisson distribution
+poisson_mean <- lambda
+poisson_variance <- lambda
+print(paste("Poisson distribution: mean =", poisson_mean))
+print(paste("Poisson distribution: variance =", poisson_variance))
+
+# Gamma distribution
+gamma_mean <- shape * scale
+gamma_variance <- shape * scale^2
+print(paste("Gamma distribution: mean =", gamma_mean))
+print(paste("Gamma distribution: variance =", gamma_variance))
+```
+
+(d) Calculate the sample mean (mean) and variance (var) for your random sample. Do they match the theoretical quantities?
+
+```{r sample-moments}
+# Poisson distribution
+poisson_mean_sample <- mean(poisson_rvs)
+poisson_variance_sample <- var(poisson_rvs)
+print(paste("Poisson distribution: sample mean =", poisson_mean_sample))
+print(paste("Poisson distribution: sample variance =", poisson_variance_sample))
+
+# Gamma distribution
+gamma_mean_sample <- mean(gamma_rvs)
+gamma_variance_sample <- var(gamma_rvs)
+print(paste("Gamma distribution: sample mean =", gamma_mean_sample))
+print(paste("Gamma distribution: sample variance =", gamma_variance_sample))
+```
+
+(e) Repeat (a-d) using n = 200, 500, 1000. What happens as the sample size increases?
+
+```{r increase-sample-size}
+n_values <- c(200, 500, 1000)
+
+for (n in n_values) {
+  distributions <- generate_distributions(n, lambda, shape, scale)
+  poisson_rvs <- distributions$poisson_rvs
+  gamma_rvs <- distributions$gamma_rvs
+
+  plot_distributions(distributions, points, poisson_pmf, gamma_pdf)
+
+  print(paste("Poisson distribution (n =", n, "): sample mean =", mean(poisson_rvs)))
+  print(paste("Poisson distribution (n =", n, "): sample variance =", var(poisson_rvs)))
+
+  print(paste("Gamma distribution (n =", n, "): sample mean =", mean(gamma_rvs)))
+  print(paste("Gamma distribution (n =", n, "): sample variance =", var(gamma_rvs)))
+}
+```
