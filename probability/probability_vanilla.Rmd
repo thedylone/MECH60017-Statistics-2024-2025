@@ -1,0 +1,169 @@
+---
+title: "Probability with vanilla R"
+author: "Dylan Chua"
+date: "November 2024"
+output:
+  html_document:
+    self_contained: yes
+---
+
+```{r setup-chunk, include=FALSE}
+knitr::opts_chunk$set(
+  dev = "png",
+  dpi = 300,
+  cache = TRUE,
+  fig.path = "plots/R/"
+)
+```
+
+# 1 Simulation of the probability that athletes took drugs given a positive test result
+
+In this exercise you will simulate the conditional probability that an athlete took drugs, given he/she failed a drug test.
+
+Scenario: Suppose you have a population of 100 athletes. It is known that 10% of athletes take drugs. There is a test that will correctly identify 80% of drug users and also incorrectly identify 20% of clean athletes as drug users.
+
+Simulate this situation: Each athlete in population of size 100 has probability 0.1 of being a drug taker. For each simulated athlete, generate a random integer 1-10 - if this is 1 the simulated athlete takes drugs, if this is 2-10 does not take drugs. 80% of the population is correctly identified by the test - for each simulated athlete, generate a second random integer 1-10 - if this is 1 or 2 the simulated athlete's test is incorrect, otherwise correct.
+
+Athletes who fail the test include drug takers correctly identified as cheats and clean athletes incorrectly identified as cheats. So a simulated athlete is deemed to have failed if his/her 1st random integer is 1 and 2nd random integer is 3-10 OR 1st integer 2-10 and 2nd integer 1-2.
+
+You are now in a position to calculate the first simulated conditional probability of drug taking among the athletes who failed the test.
+
+```{r simulation}
+simulation <- function(
+    n = 100,
+    p_drug = 0.1,
+    p_true_pos = 0.8,
+    p_false_pos = 0.2,
+    two_tests = FALSE) {
+  # population of athletes
+  drug <- runif(n) < p_drug
+  # test results
+  test <- runif(n)
+
+  # simulate drug test
+  # if drug taker and correctly identified or clean and incorrectly identified
+  if (two_tests) {
+    second_test <- runif(n)
+    result <- (drug & test <= p_true_pos & second_test <= p_true_pos) |
+      (!drug & test <= p_false_pos & second_test <= p_false_pos)
+  } else {
+    result <- (drug & test <= p_true_pos) | (!drug & test <= p_false_pos)
+  }
+
+  # calculate conditional probability of drug taking given failed test
+  p_drug_fail <- sum(drug & result) / sum(result)
+
+  return(p_drug_fail)
+}
+
+simulation()
+
+plot_density <- function(simulations, main = "P(takes drugs | failed test)") {
+  hist(simulations,
+    main = main,
+    freq = FALSE,
+    xlab = "Probability",
+    col = "skyblue",
+    border = "white",
+    xlim = c(0, 1)
+  )
+  lines(density(simulations),
+    lwd = 2,
+    col = "red"
+  )
+}
+```
+
+### 1. Repeat this simulation many times (for example, 1000 times). Plot (histogram or density) the resulting simulated probabilities. What would you consider to be an unusual result?
+
+```{r repeat-simulation}
+# repeat simulation 1000 times
+simulations <- replicate(1000, simulation())
+
+# plot histogram of simulated probabilities
+plot_density(simulations)
+```
+
+### 2. Try changing the assumptions/ parameters of the model - for instance, change the rate of drug taking in the population of athletes, the proportion of drug takers correctly identified by the test, the proportion of clean athletes incorrectly identified (in this example these last two proportions are equal, but this would usually not be the case).
+
+```{r change-p-drug}
+# probability of drug taking in the population of athletes increased to 20%
+p_drug_simulations <- replicate(1000, simulation(p_drug = 0.2))
+
+# plot histogram of simulated probabilities
+plot_density(p_drug_simulations,
+  main = "P(takes drugs | failed test) (20% drug takers)"
+)
+```
+
+```{r change-p-true-pos}
+# proportion of drug takers correctly identified by the test increased to 90%
+p_true_pos_simulations <- replicate(1000, simulation(p_true_pos = 0.9))
+
+# plot histogram of simulated probabilities
+plot_density(p_true_pos_simulations,
+  main = "P(takes drugs | failed test) (90% true positive rate)"
+)
+```
+
+```{r change-p-false-pos}
+# false positive rate increased to 10%
+p_false_pos_simulations <- replicate(1000, simulation(p_false_pos = 0.1))
+
+# plot histogram of simulated probabilities
+plot_density(p_false_pos_simulations,
+  main = "P(takes drugs | failed test) (10% false positive rate)"
+)
+```
+
+```{r compare-simulations}
+# compare the simulations
+par(mfrow = c(2, 2))
+plot_density(simulations, main = "P(takes drugs | failed test)")
+plot_density(p_drug_simulations,
+  main = "P(takes drugs | failed test) (20% drug takers)"
+)
+plot_density(p_true_pos_simulations,
+  main = "P(takes drugs | failed test) (90% true positive rate)"
+)
+plot_density(p_false_pos_simulations,
+  main = "P(takes drugs | failed test) (10% false positive rate)"
+)
+```
+
+## 3. Now simulate the situation where the athlete is only deemed to have failed if he/she has failed two tests, where the tests are conditionally independent given the athlete's drug-taking status.
+
+```{r two-tests}
+# repeat simulation 1000 times
+simulations_two_tests <- replicate(1000, simulation(two_tests = TRUE))
+
+# plot histogram of simulated probabilities
+par(mfrow = c(1, 1))
+plot_density(simulations_two_tests,
+  main = "P(takes drugs | failed test) (two tests)"
+)
+```
+
+## 4. Can you suggest ways to improve the simulation (e.g. write code efficiently)?
+
+## 5. Use Bayes' Theorem to calculate the conditional probability of drug taking given failing (a) one test (b) two tests that are conditionally independent given drug-taking status. (Use the probabilites as specified in the original scenario.) Does this agree with your simulation?
+
+```{r bayes-theorem}
+# Bayes' Theorem
+# P(takes drugs | failed test) = P(takes drugs and failed test) / P(failed test)
+
+p_drug <- 0.1
+p_true_pos <- 0.8
+p_false_pos <- 0.2
+
+print(paste(
+  "P(takes drugs | failed test): ",
+  p_drug * p_true_pos / (p_drug * p_true_pos + (1 - p_drug) * p_false_pos)
+))
+```
+
+# 2 Probability Distributions
+
+Initially choose two distributions (one discrete and one continuous).
+
+## 
