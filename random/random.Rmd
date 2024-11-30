@@ -1,0 +1,119 @@
+---
+title: "Random generator with R"
+author: "Dylan Chua"
+date: "November 2024"
+output:
+  html_document:
+    self_contained: yes
+---
+
+```{r setup-chunk, include=FALSE}
+knitr::opts_chunk$set(
+  dev = "png",
+  dpi = 300,
+  cache = FALSE,
+  fig.path = "plots/R/"
+)
+
+library(EnvStats)
+```
+
+# 1 Building your own random number generator
+
+Suppose we want to draw random numbers according to a random distribution with cumulative distribution function F(x) but only have access to a uniform random number generator. How do we proceed?
+
+## 1.1 Inverse Transform Sampling
+
+If the inverse F^(-1)(x) of the c.d.f. is available then the inverse transform sampling approach can be used:
+
+1. Generate a random number between 0 and 1, u - ie, u is from a Uniform(0, 1) distribution.
+
+2. Calculate x = F^(-1)(u) - x is taken to be a random sample from the distribution with c.d.f. F(x).
+
+This approach is usually fine for discrete probability distributions where it is easy to compute the c.d.f. F(x) and continuous distributions where the integrals required for the c.d.f. F(x) are availiable.
+
+Tasks
+
+Use the inverse transform sampling method to build your own functions to generate random samples from some standard distributions.
+
+### 1. Exponential distribution, X ~ Exp(λ)
+
+You choose the value of the parameter, and you decide the number n of random samples
+to generate - try the following for a few different values for n.
+
+(a) Generate u, a random number between 0 and 1, and calculate x = F^(-1)(u). (Note you should explicitly derive F^(-1) for the exponential distribution.) Repeat for n random samples from an Exp(λ) distribution.
+
+F^(-1)(u) = -1/λ ln(1 - u)
+
+```{r exponential}
+generate_exp <- function(lambda = 1, n = 100) {
+  u <- runif(n)
+  inverse <- function(u) {
+    return(-1 / lambda * log(1 - u))
+  }
+  exp <- inverse(u)
+  return(exp)
+}
+```
+
+(b) Use a Q-Q plot to check your method by plotting the quantiles of your random numbers against the theoretical exponential quantiles.
+
+```{r qqplot_exponential}
+exp <- generate_exp(lambda = 10, n = 900)
+
+qqPlot(exp, distribution = "exp", estimate.params = TRUE, add.line = TRUE)
+```
+
+(c) How does sample size affect the Q-Q plots?
+
+### 2. Poisson distribution, X ~ Poisson(λ)
+
+Repeat the tasks above for the Poisson distribution.
+
+```{r poisson}
+generate_pois <- function(lambda = 1, n = 100) {
+  u <- runif(n)
+  pois <- qpois(u, lambda)
+  return(pois)
+}
+```
+
+```{r qqplot_poisson}
+pois <- generate_pois(lambda = 10, n = 900)
+
+qqPlot(pois, distribution = "pois", estimate.params = TRUE, add.line = TRUE)
+```
+
+Is the Q-Q plot appropriate to check both the Poisson and exponential distributional
+assuptions?
+
+## 1.2 Box-Muller Method
+
+The inverse transform sampling method cannot be used to generate normally distributed random numbers as the c.d.f. for the normal distribution is not available analytically. The Box-Muller method provides a method for generating normally distributed random variables:
+
+1. Generate two uniformly distributed random numbers between 0 and 1, u1 and u2.
+
+2. Calculate z = sqrt(-2 * ln(u1)) * cos(2 * pi * u2)
+
+z is then a sample from a normal distribution with mean 0 and variance 1. The transformation x = σz + µ will give an observation from a N(µ, σ^2).
+
+Tasks
+
+### 1. Use the Box-Muller method to build your own function to generate random samples from the normal distribution with mean µ and variance σ^2 (you choose numerical values for µ and σ^2).
+
+```{r normal}
+generate_norm <- function(n = 100) {
+  u1 <- runif(n)
+  u2 <- runif(n)
+  z <- sqrt(-2 * log(u1)) * cos(2 * pi * u2)
+  return(z)
+}
+```
+
+### 2. Use a Q-Q plot to check your method by plotting the quantiles of your random numbers against the theoretical normal quantiles.
+
+```{r qqplot_normal}
+norm <- generate_norm(n = 900)
+
+qqPlot(norm, distribution = "norm", estimate.params = TRUE, add.line = TRUE)
+```
