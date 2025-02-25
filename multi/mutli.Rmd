@@ -1,0 +1,294 @@
+---
+title: "Multivariate with R"
+author: "Dylan Chua"
+date: "December 2024"
+output:
+  html_document:
+    self_contained: yes
+---
+
+```{r setup-chunk, include=FALSE}
+knitr::opts_chunk$set(
+  dev = "png",
+  dpi = 300,
+  cache = TRUE,
+  fig.path = "plots/R/"
+)
+
+library(EnvStats)
+```
+
+# 1 Simulating from the Multivariate Normal distribution
+
+In this exercise, we will simulate random vectors from a 3-dimensional multivariate Normal distribution with mean µ and covariance matrix Σ given by:
+
+µ = ((-1), (0), (2))
+
+Σ = ((1, 0.5, 0), (0.5, 2, 0), (0, 0, 0.5))
+
+Tasks
+
+## 1.1 Generate a 3 x 1 vector of standard normal random variables, lets call this z.
+
+```{r standard_normal}
+z <- rnorm(3)
+```
+
+## 1.2 Define a mean vector mu and covariance matrix Sigma as above.
+
+```{r mean_cov}
+mu <- c(-1, 0, 2)
+sigma <- matrix(c(1, 0.5, 0, 0.5, 2, 0, 0, 0, 0.5), nrow = 3)
+```
+
+## 1.3 Calculate x = mu + chol(Sigma)*z (Cholesky decomposition). This is a random vector from the desired multivariate Normal distribution.
+
+```{r multivariate_normal}
+x <- mu + chol(sigma) %*% z
+```
+
+## 1.4 Repeat steps (1-3) and generate 1,000 random vectors, x1, x2, . . . , x1000.
+
+```{r repeat}
+n <- 1000
+x <- matrix(NA, nrow = 3, ncol = n)
+for (i in 1:n) {
+  z <- rnorm(3)
+  x[, i] <- mu + chol(sigma) %*% z
+}
+```
+
+## 1.5 Reproduce Figure 1 shown on the next page using your samples. Can you explain how the features of the plot relate to the parameters of this particular multivariate Normal distribution?
+
+```{r plot}
+par(mfrow = c(3, 3))
+for (i in 1:3) {
+  for (j in 1:3) {
+    if (i == j) {
+      hist(x[i, ],
+        main = "",
+        xlab = bquote(x[.(i)]),
+        ylab = "",
+        xlim = c(-10, 10),
+      )
+    } else {
+      plot(x[i, ], x[j, ],
+        xlab = bquote(x[.(i)]),
+        ylab = bquote(x[.(j)]),
+        xlim = c(-10, 10),
+        ylim = c(-10, 10),
+        asp = 1
+      )
+    }
+  }
+}
+```
+
+# 2 Introduction to bootstrapping
+
+In statistics, bootstrapping involves random sampling with replacement from an empirical or theoretical distribution. Bootstrapping can be useful for understanding the properties of statistics, such as the mean, the trimmed mean and the median. In this exercise, you will use bootstrapping to look at the distribution of the mean of a normal sample, and the distributions of the mean, the trimmed mean and the median of the Old Faithful data.
+
+Tasks
+
+## 2.1 Draw a random sample of size n = 100 from a normal distribution with mean 1 and variance 2. Save this sample (so it is fixed). Starting with this sample, draw from it a random sample with replacement, of the same size of the original sample. Calculate the mean of the resample. Plot a histogram of the resample, and compare with the original sample. Repeat this 3 times (3 resamples and calculate mean of each).
+
+```{r normal}
+n <- 100
+mean <- 1
+var <- 2
+fixed <- rnorm(n, mean = mean, sd = sqrt(var))
+
+resample <- function(data, n) {
+  new <- sample(data, size = n, replace = TRUE)
+  hist(new, main = "", xlab = "Resample", ylab = "")
+}
+
+par(mfrow = c(1, 1))
+hist(fixed, main = "", xlab = "Original sample", ylab = "")
+
+par(mfrow = c(1, 3))
+for (i in 1:3) {
+  resample(fixed, n)
+}
+```
+
+## 2.2 Repeat the resampling with replacement procedure k times, and each time calculate and store the mean of the resample (you choose a value of k). Plot a kernel density smooth of the resample means. Recall that the distribution of the mean of n i.i.d. normal random variables with mean µ and variance σ^2 is normal with mean µ and variance σ^2/n. Overlay the theoretical density on your histogram - how well do they agree? What is the effect of changing the number of resamples k? What is the effect of changing the size of the original sample, n?
+
+```{r resample_mean}
+k <- 1000
+
+resample_k <- function(data, n, k) {
+  return(replicate(k, sample(data, size = n, replace = TRUE)))
+}
+
+plot_resample_means <- function(data, resamples) {
+  means <- apply(resamples, 2, mean)
+  par(mfrow = c(1, 1))
+  hist(means,
+    main = "",
+    xlab = "Resample means",
+    ylab = "",
+    freq = FALSE
+  )
+  lines(density(means), lwd = 2, col = "red")
+  mean <- mean(data)
+  var <- var(data)
+  theoretical <- rnorm(k, mean = mean, sd = sqrt(var) / n)
+  lines(density(theoretical), lwd = 2, col = "blue")
+}
+
+resamples <- resample_k(fixed, n, k)
+plot_resample_means(fixed, resamples)
+```
+
+## 2.3 Repeat 1 and 2 using the waiting times from the Old Faithful dataset on Blackboard as your starting sample.
+
+```{r faithful}
+library(readr)
+faithful <- read_csv("../faithful/faithful.csv",
+  col_types = cols(
+    waiting = col_integer(),
+    duration = col_double(),
+    day = col_integer()
+  )
+)
+waiting <- faithful$waiting
+
+par(mfrow = c(1, 1))
+hist(waiting, main = "", xlab = "Original sample", ylab = "")
+par(mfrow = c(1, 3))
+for (i in 1:3) {
+  resample(waiting, n)
+}
+
+faithful_resamples <- resample_k(waiting, nrow(faithful), k)
+plot_resample_means(waiting, faithful_resamples)
+```
+
+## 2.4 Now, using the Old Faithful waiting times, calculate (i) the median and (ii) the 5% trimmed mean of each of your k resamples, and plot the resulting distributions of medians and trimmed means. Note we do not have a theoretical result like the CLT for the median or the trimmed mean.
+
+```{r faithful_median_trimmedmean}
+resample_median <- median(faithful_resamples)
+resample_trimmed_mean <- mean(faithful_resamples, trim = 0.05)
+
+par(mfrow = c(1, 2))
+hist(resample_median,
+  main = "",
+  xlab = "Resample median",
+  ylab = "",
+  freq = FALSE
+)
+hist(resample_trimmed_mean,
+  main = "",
+  xlab = "Resample trimmed mean",
+  ylab = "",
+  freq = FALSE
+)
+```
+
+# 3 Simulating from bivariate distributions
+
+The following bivariate distribution:
+
+$$f(x, y) = \frac{6}{5} (x + y^2), 0 \leq x \leq 1, 0 \leq y \leq 1$$
+
+has the marginal distribution $f_Y(y)$:
+
+$$f_Y(y) = \frac{6}{5} (\frac{1}{2} + y^2), 0 \leq y \leq 1$$
+
+and the conditional distribution $f_{X|Y}(x|y)$:
+
+$$f_{X|Y}(x|y) = \frac{x + y^2}{\frac{1}{2} + y^2}$$
+
+Tasks
+
+## 3.1 Verify that the cumulative distribution functions $F_Y(y)$ and $F_{X|Y}(x|y)$ are given by:
+
+$$F_Y(y) = \frac{3}{5} y + \frac{2}{5} y^3$$
+
+$$F_{X|Y}(x|y) = \frac{x^2 + 2xy^2}{1 + 2y^2}$$
+
+```{r cdf}
+# FY <- function(y) {
+#   return(3 / 5 * y + 2 / 5 * y^3)
+# }
+
+# FX_Y <- function(x, y) {
+#   return((x^2 + 2 * x * y^2) / (1 + 2 * y^2))
+# }
+
+# fy <- function(y) {
+#   return(6 / 5 * (1 / 2 + y^2))
+# }
+
+# fxy <- function(x, y) {
+#   return(6 / 5 * (x + y^2))
+# }
+
+# y <- seq(0, 1, length.out = 100)
+# x <- seq(0, 1, length.out = 100)
+
+# integrate_fy <- integrate(fy, 0, 1)
+# integrate_fxy <- integrate(fxy, 0, 1, 0, 1)
+```
+
+## 3.2 Use the above results and the inverse transform sampling method to sample random variates from the joint probability density f (x, y):
+
+### (a) Generate a random sample, u1 from a U (0, 1) distribution.
+
+```{r u1}
+u1 <- runif(1)
+```
+
+### (b) Solve the equation $F_Y(y) = u_1$ to find y.
+
+```{r y}
+solve_y <- function(u1) {
+  return(polyroot(c(2 / 5, 0, 3 / 5 - u1)))
+}
+
+# positive real root from 0 to 1
+y <- max(Re(solve_y(u1)))
+print(y)
+```
+
+### (c) Generate a random sample, u2 from a U (0, 1) distribution.
+
+```{r u2}
+u2 <- runif(1)
+```
+
+### (d) Solve the equation $F_{X|Y}(x|y) = u_2$ to find x.
+
+```{r x}
+solve_x <- function(u2, y) {
+  return(polyroot(c(2 * y^2, 2 * y^2, -u2 * (1 + 2 * y^2))))
+}
+
+# positive real root from 0 to 1
+x <- max(Re(solve_x(u2, y)))
+
+print(c(x, y))
+```
+
+## 3.3 Generate a number of random samples (pairs). Plot these pairs, and to overlay the theoretical density use the contour function, with meshgrid  to specify the points at which the density is evaluated. Can you reproduce Figure 32 in lecture notes (p79)?
+
+```{r random_samples}
+n <- 1000
+
+generate_bivariate <- function(n) {
+  samples <- matrix(NA, nrow = 2, ncol = n)
+  for (i in 1:n) {
+    u1 <- runif(1)
+    y <- max(Re(solve_y(u1)))
+    u2 <- runif(1)
+    x <- max(Re(solve_x(u2, y)))
+    samples[, i] <- c(x, y)
+  }
+  return(samples)
+}
+
+samples <- generate_bivariate(n)
+plot(samples[1, ], samples[2, ], xlab = "x", ylab = "y")
+
+```
